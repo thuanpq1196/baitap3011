@@ -3,6 +3,8 @@ package com.cybersoft.baitap3011.controller;
 import com.cybersoft.baitap3011.entity.Course;
 import com.cybersoft.baitap3011.entity.Registration;
 import com.cybersoft.baitap3011.entity.Student;
+import com.cybersoft.baitap3011.repository.CourseRepo;
+import com.cybersoft.baitap3011.repository.RegistrationRepo;
 import com.cybersoft.baitap3011.repository.StudentRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +17,14 @@ import java.util.List;
 public class StudentController {
 
     private StudentRepo studentRepo;
+    private RegistrationRepo registrationRepo;
+    private CourseRepo courseRepo;
 
     @Autowired
-    public StudentController(StudentRepo studentRepo){
+    public StudentController(StudentRepo studentRepo, RegistrationRepo registrationRepo, CourseRepo courseRepo){
         this.studentRepo = studentRepo;
+        this.registrationRepo = registrationRepo;
+        this.courseRepo = courseRepo;
     }
 
     @GetMapping
@@ -58,14 +64,38 @@ public class StudentController {
     }
 
     @PostMapping("/{studentId}/courses")
-    public ResponseEntity<?> addCourseForStudent(@PathVariable int studentId, @RequestParam List<Registration> registrations){
-        studentRepo.addCourseForStudent(registrations,studentId);
-        return ResponseEntity.ok(studentRepo.findAll());
+    public ResponseEntity<?> addCourseForStudent(@PathVariable int studentId, @RequestBody List<Course> courses){
+        courses.stream().map(item ->{
+            Registration registration = new Registration();
+            registration.setStudent(studentRepo.getReferenceById(studentId));
+            registration.setCourse(item);
+            return registrationRepo.save(registration);
+        });
+        return ResponseEntity.ok(findCourseByStudentId(studentId));
     }
 
     @GetMapping("/{studentId}/coures")
     public ResponseEntity<?> findCourseByStudentId(@PathVariable int studentId){
         List<Course> courses = studentRepo.findRegistrationByStudentId(studentId).stream().map(Registration::getCourse).toList();
         return ResponseEntity.ok(courses);
+    }
+
+    @PostMapping("/{studentId}/coures/{courseId}")
+    public ResponseEntity<?> addStudentToCourse(@PathVariable int studentId, @PathVariable int courseId){
+        Registration registration = new Registration();
+        registration.setStudent(studentRepo.getReferenceById(studentId));
+        registration.setCourse(courseRepo.getReferenceById(courseId));
+        registrationRepo.save(registration);
+        List<Student> students = courseRepo.getReferenceById(courseId).getRegistrationList().stream().map(Registration::getStudent).toList();
+        return ResponseEntity.ok(students);
+    }
+
+    @DeleteMapping("/{studentId}/coures/{courseId}")
+    public ResponseEntity<?> deleteStudentFromCourse(@PathVariable int studentId, @PathVariable int courseId){
+        Student student = studentRepo.getReferenceById(studentId);
+        Course course = courseRepo.getReferenceById(courseId);
+        registrationRepo.deleteByCourseAndStudent(course, student);
+        List<Student> students = courseRepo.getReferenceById(courseId).getRegistrationList().stream().map(Registration::getStudent).toList();
+        return ResponseEntity.ok(students);
     }
 }

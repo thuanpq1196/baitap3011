@@ -2,6 +2,8 @@ package com.cybersoft.baitap3011.entity;
 
 import jakarta.persistence.*;
 
+import java.util.Optional;
+
 @Entity
 public class Registration {
     @Id
@@ -49,4 +51,5 @@ public class Registration {
     public void setRegistrationDate(String registrationDate) {
         this.registrationDate = registrationDate;
     }
+
 }

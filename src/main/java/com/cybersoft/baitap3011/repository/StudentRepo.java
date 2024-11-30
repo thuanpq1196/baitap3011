@@ -13,10 +13,10 @@ import java.util.List;
 @Repository
 public interface StudentRepo extends JpaRepository<Student, Integer> {
     List<Student> getStudentsByNameContainsIgnoreCase(String keyword);
-    @Modifying
-    @Query(value=" UPDATE student s SET s.registrations = ? WHERE  s.id = ?", nativeQuery = true)
-    void addCourseForStudent(List<Registration> registrations, int id);
 
     @Query(value = "SELECT s.registrations FROM student s WHERE  s.id = ?", nativeQuery = true)
     List<Registration> findRegistrationByStudentId(int id);
+
+
+
 }
